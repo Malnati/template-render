@@ -1,29 +1,71 @@
-# Template Render Pro
+<!-- README.md -->
+<div align="center">
 
-Action de marketplace para renderizar templates a partir de variáveis de ambiente, usando envsubst.
-Pensada para fluxos de auditoria, PR bots, notificações e qualquer cenário em que você queira montar mensagens dinâmicas a partir de arquivos de template (.md, .txt, .yml, etc.).
+<h1>Template Render Pro</h1>
 
-⸻
+<p>GitHub Action para renderizar templates usando variáveis de ambiente.</p>
 
-Visão geral
+<p>
+  <a href="https://github.com/marketplace/actions/template-render">
+    <img alt="GitHub Marketplace" src="https://img.shields.io/badge/GitHub%20Marketplace-Template%20Render%20Pro-blue.svg">
+  </a>
+  <a href="https://github.com/Malnati/template-render/releases">
+    <img alt="Release" src="https://img.shields.io/github/v/release/Malnati/template-render?label=release">
+  </a>
+  <a href="https://github.com/Malnati/template-render/actions/workflows/ci.yml">
+    <img alt="CI" src="https://github.com/Malnati/template-render/actions/workflows/ci.yml/badge.svg">
+  </a>
+  <a href="https://github.com/Malnati/template-render/blob/main/LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/Malnati/template-render">
+  </a>
+</p>
 
-O Template Render Pro recebe:
-	•	Um arquivo de template (com placeholders ${VAR}).
-	•	As variáveis de ambiente já definidas no job.
-	•	Opcionalmente, um caminho de saída.
+</div>
 
-E devolve:
-	•	Um arquivo renderizado com os placeholders substituídos.
-	•	O conteúdo renderizado em memória, pronto para ser usado em outras Actions (por exemplo, como corpo de comentário em PR).
+---
 
-É uma Action genérica, desacoplada de qualquer fluxo específico, para você reutilizar em múltiplos repositórios e pipelines.
+## Visão geral
 
-⸻
+O **Template Render Pro** é uma GitHub Action genérica para **preencher templates** a partir de variáveis de ambiente, usando `envsubst`.
 
-Exemplo rápido de uso (v1.0.0)
+Você define:
 
-# .github/workflows/example-template-render-pro.yml
-name: "Example Template Render Pro"
+- Um arquivo de **template** (por exemplo, `.md`, `.txt`, `.yml`);
+- As **variáveis de ambiente** no workflow (`REPORT_FILE`, `PR_URL`, `COMMIT_SHA`, etc.);
+- Opcionalmente, um **caminho de saída**.
+
+A Action devolve:
+
+- Um **arquivo renderizado** com os placeholders substituídos;
+- O **conteúdo renderizado em memória**, pronto para ser encadeado em outras Actions (comentários em PR, bodies de issues, mensagens de auditoria, etc.).
+
+---
+
+## Por que usar
+
+<ul>
+  <li><strong>Desacoplado do fluxo</strong>: funciona com qualquer pipeline (auditoria, segurança, qualidade, release notes, etc.).</li>
+  <li><strong>Sem mágica proprietária</strong>: usa <code>envsubst</code>, padrão em <code>ubuntu-latest</code>.</li>
+  <li><strong>Pronto para PR bots</strong>: combine com Actions como <code>Malnati/pr-comment</code> para criar comentários ricos.</li>
+  <li><strong>Reutilizável</strong>: centralize textos em templates versionados e reaproveite em múltiplos repositórios.</li>
+</ul>
+
+---
+
+## Como funciona
+
+1. Você define variáveis em `env:` no job (ex.: `ATTACHED_FILE_PATH`, `BRANCH_CONVENTION`, `COMMIT_SHA`, `PR_URL`).
+2. O template usa placeholders no formato `${VAR}` (padrão `envsubst`).
+3. A Action aplica `envsubst` e grava o resultado em um arquivo.
+4. O caminho do arquivo (`path`) e o conteúdo (`body`) são expostos como `outputs`.
+
+---
+
+## Uso rápido (v1.0.0)
+
+```yaml
+# .github/workflows/example-template-render.yml
+name: "Example Template Render"
 
 on:
   workflow_dispatch:
@@ -43,7 +85,7 @@ jobs:
 
       - name: Render template
         id: render_timeline
-        uses: Malnati/template-render-pro@v1.0.0
+        uses: Malnati/template-render@v1.0.0
         with:
           template: .github/workflows/hardcode-timeline.md
           output: /tmp/hardcode-timeline.md
@@ -54,52 +96,66 @@ jobs:
           BODY: ${{ steps.render_timeline.outputs.body }}
         run: |
           set -euo pipefail
-          printf '%s\n' "$BODY"
+          printf '%s
+' "$BODY"
+```
 
+---
 
-⸻
+## Inputs
 
-Casos de uso
+<table>
+  <thead>
+    <tr>
+      <th>Input</th>
+      <th>Obrigatório</th>
+      <th>Descrição</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>template</code></td>
+      <td><strong>Sim</strong></td>
+      <td>Caminho do arquivo de template a ser renderizado (ex.: <code>.github/workflows/hardcode-timeline.md</code>).</td>
+    </tr>
+    <tr>
+      <td><code>output</code></td>
+      <td>Não</td>
+      <td>Caminho do arquivo de saída. Se vazio, será usado um caminho temporário em <code>/tmp</code>.</td>
+    </tr>
+  </tbody>
+</table>
 
-Alguns cenários em que a Action se encaixa bem:
-	•	Comentários padronizados em Pull Requests, combinando com Actions como Malnati/pr-comment.
-	•	Mensagens de timeline de auditoria (hardcode, segurança, qualidade).
-	•	Geração de arquivos .md ou .txt parametrizados para relatórios.
-	•	Templates de body de PR, issues ou notificações internas.
-	•	Qualquer fluxo em que você queira separar conteúdo (template) de dados dinâmicos (variáveis de ambiente).
+---
 
-⸻
+## Outputs
 
-Como funciona
-	1.	Você define variáveis de ambiente no job (por exemplo, ATTACHED_FILE_PATH, BRANCH_CONVENTION, COMMIT_SHA, PR_URL).
-	2.	O arquivo de template usa placeholders no formato ${VAR} (padrão envsubst).
-	3.	A Action lê o template, aplica envsubst com o ambiente atual do job e grava o resultado em um arquivo.
-	4.	O caminho do arquivo e o corpo renderizado são expostos em outputs para encadear com outras Actions.
+<table>
+  <thead>
+    <tr>
+      <th>Output</th>
+      <th>Descrição</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>path</code></td>
+      <td>Caminho absoluto do arquivo renderizado.</td>
+    </tr>
+    <tr>
+      <td><code>body</code></td>
+      <td>Conteúdo renderizado completo como string.</td>
+    </tr>
+  </tbody>
+</table>
 
-⸻
+---
 
-Inputs
+## Exemplo com comentário em Pull Request
 
-Input	Obrigatório	Descrição
-template	Sim	Caminho do arquivo de template a ser renderizado (por exemplo, .github/workflows/hardcode-timeline.md).
-output	Não	Caminho do arquivo de saída. Se vazio, será usado um caminho temporário em /tmp.
+Integração com <code>Malnati/pr-comment</code> usando o `body` gerado pelo Template Render Pro.
 
-
-⸻
-
-Outputs
-
-Output	Descrição
-path	Caminho absoluto do arquivo renderizado.
-body	Conteúdo renderizado completo como string.
-
-
-⸻
-
-Exemplo com comentário em PR (modo raw)
-
-Integração direta com Malnati/pr-comment usando o body gerado pelo Template Render Pro.
-
+```yaml
 # .github/workflows/hardcode-timeline.yml
 name: "Hardcode Timeline"
 
@@ -121,7 +177,7 @@ jobs:
 
       - name: Render timeline template
         id: timeline
-        uses: Malnati/template-render-pro@v1.0.0
+        uses: Malnati/template-render@v1.0.0
         with:
           template: .github/workflows/hardcode-timeline.md
           output: /tmp/hardcode-timeline.md
@@ -136,53 +192,57 @@ jobs:
           use_raw_body: "true"
           template_path: ""
           message_id: hardcode-timeline
+```
 
+---
 
-⸻
+## Exemplo de template
 
-Exemplo de template
-
+```markdown
 <!-- .github/workflows/hardcode-timeline.md -->
 A branch do arquivo ${ATTACHED_FILE_PATH} é ${BRANCH_CONVENTION} e o commit referente à inclusão deste arquivo é ${COMMIT_SHA}, então o Pull Request para integrar as mudanças desta branch é ${PR_URL}.
 
 > [!TIP]
 > Você pode modificar esta mensagem alterando o arquivo de template usado pelo fluxo.
+```
 
+---
 
-⸻
+## Boas práticas
 
-Boas práticas
-	•	Manter os templates versionados no repositório (.github/workflows/*.md, templates/*.md).
-	•	Usar nomes de variáveis em maiúsculas para facilitar a identificação (REPORT_FILE, REPORT_BRANCH, etc.).
-	•	Garantir que todas as variáveis usadas no template estejam definidas em env: antes da chamada da Action.
-	•	Evitar lógica complexa dentro do template; deixar a lógica no workflow e apenas interpolar valores.
+<ul>
+  <li>Versione seus templates no repositório (<code>.github/workflows/*.md</code>, <code>templates/*.md</code>, etc.).</li>
+  <li>Use variáveis em maiúsculas para facilitar leitura (<code>REPORT_FILE</code>, <code>REPORT_BRANCH</code>, <code>PR_URL</code>).</li>
+  <li>Garanta que todas as variáveis usadas no template estejam definidas em <code>env:</code> antes da chamada da Action.</li>
+  <li>Mantenha a lógica no workflow e use o template apenas para interpolar valores.</li>
+</ul>
 
-⸻
+---
 
-Limitações
-	•	A Action depende de envsubst (disponível por padrão na imagem ubuntu-latest do GitHub Actions).
-	•	O formato de placeholder suportado é ${VAR} (não há suporte para lógica condicional ou laços).
-	•	Não há validação automática de variáveis ausentes: placeholders sem variável definida permanecem vazios ou substituídos por string vazia.
+## Compatibilidade
 
-⸻
+- Runner: <code>ubuntu-latest</code> (ou qualquer ambiente com <code>envsubst</code> disponível).
+- Tipo: Composite Action (<code>action.yml</code> na raiz do repositório).
 
-Desenvolvimento
-	•	Repositório: https://github.com/Malnati/template-render-pro
-	•	Tipo: Composite Action (action.yml)
-	•	Plataforma alvo: ubuntu-latest (com envsubst disponível no ambiente)
+---
 
-Sugestões de evolução:
-	•	Adicionar suporte opcional a validação de variáveis obrigatórias.
-	•	Adicionar modo de “dry-run” com log das variáveis aplicadas.
-	•	Expandir exemplos oficiais de integração com outras Actions (PR bots, linters, scanners).
+## Roadmap
 
-⸻
+<ul>
+  <li>Adicionar modo opcional de validação de variáveis obrigatórias.</li>
+  <li>Adicionar modo <em>dry-run</em> com log das variáveis aplicadas.</li>
+  <li>Incluir mais exemplos oficiais de integração (auditoria de código, segurança, relatórios de qualidade).</li>
+</ul>
 
-Licença
+---
 
-Distribuído sob licença MIT.
-Consulte o arquivo LICENSE no repositório para detalhes.
+## Licença
 
-⸻
+Distribuído sob licença MIT.  
+Consulte o arquivo <code>LICENSE</code> no repositório para detalhes.
 
-Para usar no Marketplace, crie a tag v1.0.0, configure a Action com o arquivo action.yml atual, adicione este README ao repositório e registre a Action na GitHub Marketplace apontando para Malnati/template-render-pro@v1.0.0.
+---
+
+<div align="center">
+  <sub>Repositório oficial: <a href="https://github.com/Malnati/template-render">Malnati/template-render</a></sub>
+</div>
