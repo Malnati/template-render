@@ -1,0 +1,78 @@
+# Malnati/template-render-pro@v1.0.0
+# Exemplo de uso:
+#   - name: Render timeline template
+#     id: render_timeline
+#     uses: Malnati/template-render-pro@v1.0.0
+#     env:
+#       ATTACHED_FILE_PATH: ${{ steps.save_report.outputs.report_file }}
+#       BRANCH_CONVENTION: ${{ steps.branch_convention.outputs.branch_convention }}
+#       COMMIT_SHA: ${{ steps.commit_attached_file.outputs.commit_sha }}
+#       PR_URL: ${{ steps.analyze_pr_status.outputs.existing_url }}
+#     with:
+#       template: .github/workflows/hardcode-timeline.md
+#       output: /tmp/hardcode-timeline.md
+
+name: "Template Render Pro"
+description: "Renderiza templates usando variáveis de ambiente (envsubst) e expõe caminho e corpo renderizado."
+author: "Ricardo Malnati"
+
+branding:
+  icon: "file-text"
+  color: "blue"
+
+inputs:
+  template:
+    description: "Caminho do arquivo de template a ser renderizado."
+    required: true
+  output:
+    description: "Caminho do arquivo de saída. Se vazio, será usado um caminho temporário."
+    required: false
+    default: ""
+
+outputs:
+  path:
+    description: "Caminho do arquivo renderizado."
+    value: ${{ steps.render.outputs.path }}
+  body:
+    description: "Conteúdo renderizado completo."
+    value: ${{ steps.render.outputs.body }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: validate
+      shell: bash
+      env:
+        TEMPLATE_INPUT: ${{ inputs.template }}
+        OUTPUT_INPUT: ${{ inputs.output }}
+      run: |
+        set -euo pipefail
+        if [ -z "$TEMPLATE_INPUT" ]; then
+          echo "template is required" >&2
+          exit 1
+        fi
+        if [ ! -f "$TEMPLATE_INPUT" ]; then
+          echo "template not found: $TEMPLATE_INPUT" >&2
+          exit 1
+        fi
+        OUTPUT_RESOLVED="$OUTPUT_INPUT"
+        if [ -z "$OUTPUT_RESOLVED" ]; then
+          OUTPUT_RESOLVED="/tmp/template-render-pro-$(date +%s%N).md"
+        fi
+        echo "template_resolved=$TEMPLATE_INPUT" >> "$GITHUB_OUTPUT"
+        echo "output_resolved=$OUTPUT_RESOLVED" >> "$GITHUB_OUTPUT"
+
+    - id: render
+      shell: bash
+      env:
+        TEMPLATE_RESOLVED: ${{ steps.validate.outputs.template_resolved }}
+        OUTPUT_RESOLVED: ${{ steps.validate.outputs.output_resolved }}
+      run: |
+        set -euo pipefail
+        envsubst < "$TEMPLATE_RESOLVED" > "$OUTPUT_RESOLVED"
+        echo "path=$OUTPUT_RESOLVED" >> "$GITHUB_OUTPUT"
+        {
+          printf 'body<<EOF\n'
+          cat "$OUTPUT_RESOLVED"
+          printf '\nEOF\n'
+        } >> "$GITHUB_OUTPUT"
