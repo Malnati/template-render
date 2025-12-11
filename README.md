@@ -12,9 +12,6 @@
   <a href="https://github.com/Malnati/template-render/releases">
     <img alt="Release" src="https://img.shields.io/github/v/release/Malnati/template-render?label=release">
   </a>
-  <a href="https://github.com/Malnati/template-render/actions/workflows/ci.yml">
-    <img alt="CI" src="https://github.com/Malnati/template-render/actions/workflows/ci.yml/badge.svg">
-  </a>
   <a href="https://github.com/Malnati/template-render/blob/main/LICENSE">
     <img alt="License" src="https://img.shields.io/github/license/Malnati/template-render">
   </a>
