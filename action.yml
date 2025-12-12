@@ -1,8 +1,18 @@
-# Malnati/template-render-pro@v1.0.0
+# Malnati/template-render-pro@v1.0.1
 # Exemplo de uso:
+#    - name: "🪄 Exportar variáveis para o template"
+#      id: export_vars_template
+#      shell: bash
+#      run: |
+#        set -euo pipefail
+#        env | grep -v '^GITHUB_' | while IFS='=' read -r key value; do
+#          printf '%s=%s\n' "$key" "$value"
+#          printf '%s=%s\n' "$key" "$value" >> "$GITHUB_ENV"
+#        done
+#
 #   - name: Render timeline template
 #     id: render_timeline
-#     uses: Malnati/template-render-pro@v1.0.0
+#     uses: Malnati/template-render-pro@v1.0.1
 #     env:
 #       ATTACHED_FILE_PATH: ${{ steps.save_report.outputs.report_file }}
 #       BRANCH_CONVENTION: ${{ steps.branch_convention.outputs.branch_convention }}
@@ -61,6 +71,15 @@ runs:
         fi
         echo "template_resolved=$TEMPLATE_INPUT" >> "$GITHUB_OUTPUT"
         echo "output_resolved=$OUTPUT_RESOLVED" >> "$GITHUB_OUTPUT"
+
+    - id: export_vars_template
+      shell: bash
+      run: |
+        set -euo pipefail
+        env | grep -v '^GITHUB_' | while IFS='=' read -r key value; do
+          printf '%s=%s\n' "$key" "$value"
+          printf '%s=%s\n' "$key" "$value" >> "$GITHUB_ENV"
+        done
 
     - id: render
       shell: bash
